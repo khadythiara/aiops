@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: ./flask-app
+    container_name: flask-log-app
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "5000:5000"
+
+  ml-api:
+    build: ./ml-api
+    container_name: ml-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:7.17.0
+    container_name: logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./logs:/app/logs
+    depends_on:
+      - elasticsearch

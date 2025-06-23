@@ -1,0 +1,9 @@
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.19.0.4:5000
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:172.19.0.1 - - [23/Jun/2025 03:26:53] "[33mGET / HTTP/1.1[0m" 404 -
+INFO:werkzeug:172.19.0.1 - - [23/Jun/2025 03:26:55] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+INFO:app:User requested /users
+INFO:werkzeug:172.19.0.1 - - [23/Jun/2025 03:27:03] "GET /users HTTP/1.1" 200 -
