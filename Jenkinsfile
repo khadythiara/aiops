@@ -12,13 +12,6 @@ pipeline {
             }
         }
 
-        stage('Fix logs permissions') {
-            steps {
-                bat 'if not exist logs mkdir logs'
-                bat 'icacls logs /grant Everyone:(OI)(CI)F /T || echo "Permission fix failed"'
-            }
-        }
-
         stage('Build Docker') {
             steps {
                 bat "docker build -t %APP_NAME%:latest ./flask-app"
