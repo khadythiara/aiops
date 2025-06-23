@@ -14,21 +14,21 @@ pipeline {
 
         stage('Build Docker') {
             steps {
-                sh 'docker build -t ${APP_NAME}:latest ./flask-app'
-                sh 'docker build -t ml-api:latest ./ml-api'
+                bat 'docker build -t ${APP_NAME}:latest ./flask-app'
+                bat 'docker build -t ml-api:latest ./ml-api'
             }
         }
 
         stage('Start Stack') {
             steps {
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d --build'
+                bat 'docker-compose down || true'
+                bat 'docker-compose up -d --build'
             }
         }
 
         stage('Analyse ML') {
             steps {
-                sh 'curl -X POST http://localhost:8000/analyze'
+                bat 'curl -X POST http://localhost:8000/analyze'
             }
         }
     }
