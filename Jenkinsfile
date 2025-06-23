@@ -15,10 +15,7 @@ pipeline {
         stage('Fix logs permissions') {
             steps {
                 bat 'if not exist logs mkdir logs'
-                // Essaie en français
-                bat 'icacls logs /grant "Utilisateurs authentifiés":(OI)(CI)F /T || echo "Permission fix failed (fr)"'
-                // Ou en anglais
-                bat 'icacls logs /grant "Authenticated Users":(OI)(CI)F /T || echo "Permission fix failed (en)"'
+                bat 'icacls logs /grant Everyone:(OI)(CI)F /T || echo "Permission fix failed"'
             }
         }
 
