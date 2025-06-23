@@ -14,14 +14,14 @@ pipeline {
 
         stage('Build Docker') {
             steps {
-                bat 'docker build -t ${APP_NAME}:latest ./flask-app'
-                bat 'docker build -t ml-api:latest ./ml-api'
+                bat "docker build -t %APP_NAME%:latest ./flask-app"
+                bat "docker build -t ml-api:latest ./ml-api"
             }
         }
 
         stage('Start Stack') {
             steps {
-                bat 'docker-compose down || true'
+                bat 'docker-compose down || echo "Nothing to stop"'
                 bat 'docker-compose up -d --build'
             }
         }
