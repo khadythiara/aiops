@@ -15,9 +15,10 @@ pipeline {
         stage('Fix logs permissions') {
             steps {
                 bat 'if not exist logs mkdir logs'
-                bat 'icacls logs /grant Everyone:(OI)(CI)F /T'
+                bat 'icacls logs /grant "%USERNAME%":(OI)(CI)F /T'
             }
         }
+
 
         stage('Build Docker') {
             steps {
