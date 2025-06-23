@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Clone') {
             steps {
-                git 'https://github.com/ton-utilisateur/ton-projet.git'
+                git 'https://github.com/khadythiara/aiops.git'
             }
         }
 
