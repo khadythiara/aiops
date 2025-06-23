@@ -8,6 +8,11 @@ app = Flask(__name__)
 @app.route("/analyze", methods=["POST"])
 def analyze():
     log_path = "./logs/app.log"
+    output_path = "./logs/anomalies.json"
+
+    # S'assurer que le dossier ./logs existe
+    os.makedirs("./logs", exist_ok=True)
+
     if not os.path.exists(log_path):
         return jsonify({"error": "log file not found"}), 404
 
@@ -16,6 +21,7 @@ def analyze():
 
     timestamps = [i for i in range(len(lines))]
     df = pd.DataFrame({"timestamp": timestamps})
+
     model = IsolationForest(contamination=0.2, random_state=42)
     df["anomaly"] = model.fit_predict(df[["timestamp"]])
 
@@ -25,9 +31,13 @@ def analyze():
         for _, row in anomalies.iterrows()
     ]
 
-    with open("./logs/anomalies.json", "w") as out:
-        for line in anomaly_json:
-            out.write(json.dumps(line) + "\n")
+    # Sauvegarder les anomalies détectées
+    try:
+        with open(output_path, "w") as out:
+            for line in anomaly_json:
+                out.write(json.dumps(line) + "\n")
+    except PermissionError:
+        return jsonify({"error": "Permission denied when writing anomalies.json"}), 500
 
     return jsonify({"detected": len(anomalies)})
 

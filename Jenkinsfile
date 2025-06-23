@@ -12,6 +12,13 @@ pipeline {
             }
         }
 
+        stage('Fix logs permissions') {
+            steps {
+                bat 'if not exist logs mkdir logs'
+                bat 'icacls logs /grant Everyone:(OI)(CI)F /T'
+            }
+        }
+
         stage('Build Docker') {
             steps {
                 bat "docker build -t %APP_NAME%:latest ./flask-app"
@@ -21,7 +28,6 @@ pipeline {
 
         stage('Clean containers') {
             steps {
-                // Supprime les conteneurs s’ils existent déjà
                 bat 'docker rm -f ml-api || echo "ml-api not running"'
                 bat 'docker rm -f flask-log-app || echo "flask-log-app not running"'
                 bat 'docker rm -f elasticsearch || echo "elasticsearch not running"'
