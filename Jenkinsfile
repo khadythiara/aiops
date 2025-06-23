@@ -15,10 +15,12 @@ pipeline {
         stage('Fix logs permissions') {
             steps {
                 bat 'if not exist logs mkdir logs'
-                bat 'icacls logs /grant "%USERNAME%":(OI)(CI)F /T'
+                // Essaie en français
+                bat 'icacls logs /grant "Utilisateurs authentifiés":(OI)(CI)F /T || echo "Permission fix failed (fr)"'
+                // Ou en anglais
+                bat 'icacls logs /grant "Authenticated Users":(OI)(CI)F /T || echo "Permission fix failed (en)"'
             }
         }
-
 
         stage('Build Docker') {
             steps {
