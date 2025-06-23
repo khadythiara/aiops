@@ -19,9 +19,20 @@ pipeline {
             }
         }
 
+        stage('Clean containers') {
+            steps {
+                // Supprime les conteneurs s’ils existent déjà
+                bat 'docker rm -f ml-api || echo "ml-api not running"'
+                bat 'docker rm -f flask-log-app || echo "flask-log-app not running"'
+                bat 'docker rm -f elasticsearch || echo "elasticsearch not running"'
+                bat 'docker rm -f kibana || echo "kibana not running"'
+                bat 'docker rm -f logstash || echo "logstash not running"'
+            }
+        }
+
         stage('Start Stack') {
             steps {
-                bat 'docker-compose down || echo "Nothing to stop"'
+                bat 'docker-compose down --remove-orphans || echo "Nothing to stop"'
                 bat 'docker-compose up -d --build'
             }
         }
