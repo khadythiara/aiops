@@ -1,13 +1,7 @@
 from flask import Flask
 import logging
-import os
-
 app = Flask(__name__)
 
-# Crée le dossier ./logs s'il n'existe pas
-os.makedirs('./logs', exist_ok=True)
-
-# Configure le logging après création du dossier
 logging.basicConfig(filename='./logs/app.log', level=logging.INFO)
 
 @app.route("/users")
