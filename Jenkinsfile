@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         APP_NAME = 'flask-log-app'
-        GOOGLE_CHAT_WEBHOOK = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
+        GOOGLE_CHAT_URL = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
     }
 
     stages {
@@ -44,8 +44,11 @@ pipeline {
                         def maxAttempts = 30
                         def attempt = 0
                         while (attempt < maxAttempts) {
-                            def result = bat(script: "curl -s -o nul -w \"%{http_code}\" --max-time 5 ${url}", returnStdout: true).trim()
-                            echo "${name} responded with HTTP ${result}"
+                            def result = bat(
+                                script: "curl -s -o nul -w ^\"%%{http_code}^\" ${url}",
+                                returnStdout: true
+                            ).trim()
+                            echo "${name} responded with ${result}"
                             if (result == '200') {
                                 echo "${name} is up!"
                                 return
@@ -73,25 +76,16 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
-        }
 
-        success {
             script {
-                def msg = [ text: "✅ Pipeline *AIOps* terminé avec *succès* 🎉" ]
-                httpRequest httpMode: 'POST',
-                            contentType: 'APPLICATION_JSON',
-                            requestBody: groovy.json.JsonOutput.toJson(msg),
-                            url: "${env.GOOGLE_CHAT_WEBHOOK}"
-            }
-        }
-
-        failure {
-            script {
-                def msg = [ text: "❌ Pipeline *AIOps* a échoué ❗ Vérifiez Jenkins." ]
-                httpRequest httpMode: 'POST',
-                            contentType: 'APPLICATION_JSON',
-                            requestBody: groovy.json.JsonOutput.toJson(msg),
-                            url: "${env.GOOGLE_CHAT_WEBHOOK}"
+                def status = currentBuild.currentResult
+                def message = [
+                    text: "📢 *Pipeline AIOps terminé* : ${status}"
+                ]
+                httpRequest contentType: 'APPLICATION_JSON',
+                    httpMode: 'POST',
+                    requestBody: groovy.json.JsonOutput.toJson(message),
+                    url: "${env.GOOGLE_CHAT_URL}"
             }
         }
     }
