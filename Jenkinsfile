@@ -38,6 +38,23 @@ pipeline {
 
         stage('Analyse ML') {
             steps {
+
+                bat '''
+                @echo off
+                set count=0
+                :waitloop
+                if exist logs\\app.log (
+                echo app.log found.
+                ) else (
+                echo Waiting for app.log to be generated...
+                timeout /T 5 > NUL
+                set /A count+=1
+                if %count% LSS 6 goto waitloop
+                echo Timeout waiting for app.log
+                )
+                '''
+
+
                 bat 'curl -X POST http://localhost:8000/analyze '
             }
         }
