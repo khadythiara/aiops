@@ -38,14 +38,32 @@ pipeline {
 
         stage('Wait for ML API') {
             steps {
-                // Utilise bash.exe pour exécuter wait-for-it.sh (nécessite Git Bash installé)
-                bat 'bash scripts/wait-for-it.sh localhost:8000 -t 30 -- echo "✅ ML API is ready"'
+                bat '''
+                @echo off
+                setlocal enabledelayedexpansion
+                set count=0
+                set max_retries=10
+
+                :waitloop
+                for /f "delims=" %%i in ('curl -s -o nul -w "%%{http_code}" http://localhost:8000/analyze') do set status=%%i
+
+                if "!status!"=="200" (
+                    echo ML API is up.
+                ) else (
+                    echo Waiting for ML API... status=!status!
+                    timeout /T 5 > NUL
+                    set /A count+=1
+                    if !count! LSS !max_retries! goto waitloop
+                    echo Timeout waiting for ML API.
+                    exit /B 1
+                )
+                '''
             }
         }
 
         stage('Analyse ML') {
             steps {
-                bat 'curl.exe -X POST http://localhost:8000/analyze'
+                bat 'curl -X POST http://localhost:8000/analyze'
             }
         }
     }
