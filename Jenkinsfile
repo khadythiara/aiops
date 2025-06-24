@@ -36,31 +36,15 @@ pipeline {
             }
         }
 
+        stage('Wait for ML API') {
+            steps {
+                // Utilise bash.exe pour exécuter wait-for-it.sh (nécessite Git Bash installé)
+                bat 'bash scripts/wait-for-it.sh localhost:8000 -t 30 -- echo "✅ ML API is ready"'
+            }
+        }
+
         stage('Analyse ML') {
             steps {
-                bat '''
-                @echo off
-                echo ===== Waiting for ml-api to be ready =====
-                set RETRY_COUNT=0
-                set MAX_RETRIES=10
-
-                :retry
-                curl -s -o nul -w "%%{http_code}" http://localhost:8000/analyze > result.txt
-                set /p STATUS=<result.txt
-                echo Status: !STATUS!
-
-                if "!STATUS!"=="200" (
-                    echo [OK] ML API is ready.
-                ) else (
-                    echo [WAIT] ML API not ready yet, waiting 5s...
-                    timeout /T 5 > nul
-                    set /A RETRY_COUNT+=1
-                    if !RETRY_COUNT! LSS !MAX_RETRIES! goto retry
-                    echo [FAIL] Timeout waiting for ML API to respond.
-                    exit /B 1
-                )
-                '''
-
                 bat 'curl.exe -X POST http://localhost:8000/analyze'
             }
         }
