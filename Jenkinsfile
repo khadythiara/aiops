@@ -40,26 +40,26 @@ pipeline {
             steps {
                 bat '''
                 @echo off
-                setlocal enabledelayedexpansion
                 set count=0
-                set max_retries=10
+                set max=10
 
-                :waitloop
-                for /f "delims=" %%i in ('curl -s -o nul -w "%%{http_code}" http://localhost:8000/analyze') do set status=%%i
-
-                if "!status!"=="200" (
-                    echo ML API is up.
+                :loop
+                echo Checking http://localhost:8000/analyze...
+                curl -s -o nul http://localhost:8000/analyze
+                if %ERRORLEVEL% EQU 0 (
+                    echo ML API is up!
                 ) else (
-                    echo Waiting for ML API... status=!status!
-                    timeout /T 5 > NUL
+                    echo Not ready yet...
+                    timeout /T 20 >nul
                     set /A count+=1
-                    if !count! LSS !max_retries! goto waitloop
-                    echo Timeout waiting for ML API.
+                    if %count% LSS %max% goto loop
+                    echo Timeout: ML API is still not responding.
                     exit /B 1
                 )
                 '''
             }
         }
+
 
         stage('Analyse ML') {
             steps {
