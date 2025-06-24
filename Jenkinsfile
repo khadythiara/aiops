@@ -38,10 +38,33 @@ pipeline {
 
         stage('Wait for ML API') {
             steps {
-                // Appel d’un script batch externe pour attendre que l'API soit prête
-                bat 'scripts\\wait-ml.bat'
+                powershell '''
+                $maxAttempts = 10
+                $url = "http://localhost:8000/analyze"
+                $attempt = 0
+
+                while ($attempt -lt $maxAttempts) {
+                    try {
+                        $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3
+                        if ($response.StatusCode -eq 200) {
+                            Write-Host "✅ ML API is UP!"
+                            break
+                        }
+                    } catch {
+                        Write-Host "⏳ Waiting for ML API... ($($attempt+1)/$maxAttempts)"
+                    }
+                    Start-Sleep -Seconds 5
+                    $attempt++
+                }
+
+                if ($attempt -eq $maxAttempts) {
+                    Write-Error "❌ Timeout: ML API is not responding."
+                    exit 1
+                }
+                '''
             }
         }
+
 
         stage('Analyse ML') {
             steps {
