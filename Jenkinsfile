@@ -21,45 +21,27 @@ pipeline {
 
         stage('Clean containers') {
             steps {
-                bat 'docker rm -f ml-api || echo "ml-api not running"'
-                bat 'docker rm -f flask-log-app || echo "flask-log-app not running"'
-                bat 'docker rm -f elasticsearch || echo "elasticsearch not running"'
-                bat 'docker rm -f kibana || echo "kibana not running"'
-                bat 'docker rm -f logstash || echo "logstash not running"'
+                bat 'docker rm -f ml-api || echo ml-api not running'
+                bat 'docker rm -f flask-log-app || echo flask-log-app not running'
+                bat 'docker rm -f elasticsearch || echo elasticsearch not running'
+                bat 'docker rm -f kibana || echo kibana not running'
+                bat 'docker rm -f logstash || echo logstash not running'
             }
         }
 
         stage('Start Stack') {
             steps {
-                bat 'docker-compose down --remove-orphans || echo "Nothing to stop"'
+                bat 'docker-compose down --remove-orphans || echo Nothing to stop'
                 bat 'docker-compose up -d --build'
             }
         }
 
         stage('Wait for ML API') {
             steps {
-                bat '''
-                @echo off
-                set count=0
-                set max=10
-
-                :loop
-                echo Checking http://localhost:8000/analyze...
-                curl -s -o nul http://localhost:8000/analyze
-                if %ERRORLEVEL% EQU 0 (
-                    echo ML API is up!
-                ) else (
-                    echo Not ready yet...
-                    timeout /T 20 >nul
-                    set /A count+=1
-                    if %count% LSS %max% goto loop
-                    echo Timeout: ML API is still not responding.
-                    exit /B 1
-                )
-                '''
+                // Appel d’un script batch externe pour attendre que l'API soit prête
+                bat 'scripts\\wait-ml.bat'
             }
         }
-
 
         stage('Analyse ML') {
             steps {
