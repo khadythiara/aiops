@@ -36,11 +36,11 @@ pipeline {
             }
         }
 
-       stage('Wait for ML API') {
+        stage('Wait for ML API') {
             steps {
                 powershell '''
                 $maxAttempts = 10
-                $url = "http://localhost:8000/analyze"
+                $url = "http://127.0.0.1:8000/analyze"
                 $attempt = 0
 
                 while ($attempt -lt $maxAttempts) {
@@ -67,10 +67,9 @@ pipeline {
 
         stage('Analyse ML') {
             steps {
-                powershell 'Invoke-RestMethod -Uri http://localhost:8000/analyze -Method POST'
+                powershell 'Invoke-RestMethod -Uri http://127.0.0.1:8000/analyze -Method POST'
             }
         }
-
     }
 
     post {
