@@ -20,6 +20,12 @@ services:
       - "8000:8000"
     depends_on:
       - flask-app
+  
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/analyze"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0

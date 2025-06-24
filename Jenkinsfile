@@ -41,7 +41,7 @@ pipeline {
 
         stage('Analyse ML') {
             steps {
-                bat 'Invoke-RestMethod -Uri http://127.0.0.1:8000/analyze -Method POST'
+                bat 'curl -X POST http://127.0.0.1:8000/analyze'
             }
         }
     }
