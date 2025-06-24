@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         APP_NAME = 'flask-log-app'
-        GOOGLE_CHAT_URL = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
+        GCHAT_WEBHOOK = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
     }
 
     stages {
@@ -45,10 +45,10 @@ pipeline {
                         def attempt = 0
                         while (attempt < maxAttempts) {
                             def result = bat(
-                                script: "curl -s -o nul -w ^\"%%{http_code}^\" ${url}",
+                                script: "curl -s -o NUL -w \"%%{http_code}\" ${url}",
                                 returnStdout: true
                             ).trim()
-                            echo "${name} responded with ${result}"
+                            echo "${name} responded with: ${result}"
                             if (result == '200') {
                                 echo "${name} is up!"
                                 return
@@ -60,15 +60,15 @@ pipeline {
                         error("${name} is not responding after ${maxAttempts * 5} seconds")
                     }
 
-                    waitForService("Elasticsearch", "http://localhost:9200")
-                    waitForService("Flask App", "http://localhost:5000/users")
+                    waitForService("Elasticsearch", "http://host.docker.internal:9200")
+                    waitForService("Flask App", "http://host.docker.internal:5000/users")
                 }
             }
         }
 
         stage('Analyse ML') {
             steps {
-                bat 'curl -X POST http://localhost:8000/analyze'
+                bat 'curl -X POST http://host.docker.internal:8000/analyze'
             }
         }
     }
@@ -78,14 +78,15 @@ pipeline {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
 
             script {
-                def status = currentBuild.currentResult
-                def message = [
-                    text: "📢 *Pipeline AIOps terminé* : ${status}"
-                ]
-                httpRequest contentType: 'APPLICATION_JSON',
-                    httpMode: 'POST',
-                    requestBody: groovy.json.JsonOutput.toJson(message),
-                    url: "${env.GOOGLE_CHAT_URL}"
+                def buildStatus = currentBuild.currentResult
+                def message = (buildStatus == 'SUCCESS') ?
+                    "✅ Pipeline terminé avec succès !" :
+                    "❌ Le pipeline a échoué à l'étape : ${env.STAGE_NAME}"
+
+                httpRequest httpMode: 'POST',
+                    contentType: 'APPLICATION_JSON',
+                    requestBody: "{\"text\": \"${message}\"}",
+                    url: "${GCHAT_WEBHOOK}"
             }
         }
     }
