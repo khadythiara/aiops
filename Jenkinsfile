@@ -37,34 +37,7 @@ pipeline {
             }
         }
 
-        stage('Wait for Elasticsearch and Flask App') {
-            steps {
-                script {
-                    def waitForService = { name, url ->
-                        def maxAttempts = 30
-                        def attempt = 0
-                        while (attempt < maxAttempts) {
-                            def result = bat(
-                                script: "curl -s -o NUL -w \"%%{http_code}\" ${url}",
-                                returnStdout: true
-                            ).trim()
-                            echo "${name} responded with: ${result}"
-                            if (result == '200') {
-                                echo "${name} is up!"
-                                return
-                            }
-                            echo "Waiting for ${name}... (${attempt + 1}/${maxAttempts})"
-                            sleep time: 5, unit: 'SECONDS'
-                            attempt++
-                        }
-                        error("${name} is not responding after ${maxAttempts * 5} seconds")
-                    }
-
-                    waitForService("Elasticsearch", "http://host.docker.internal:9200")
-                    waitForService("Flask App", "http://host.docker.internal:5000/users")
-                }
-            }
-        }
+    
 
         stage('Analyse ML') {
             steps {
