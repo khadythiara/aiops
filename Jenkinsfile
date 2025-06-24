@@ -41,7 +41,7 @@ pipeline {
 
         stage('Analyse ML') {
             steps {
-                bat 'curl -X POST http://host.docker.internal:8000/analyze'
+                bat 'curl -X POST http://127.0.0.1:8000/analyze'
             }
         }
     }
