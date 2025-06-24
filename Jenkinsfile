@@ -39,13 +39,13 @@ pipeline {
         stage('Wait for ML API') {
             steps {
                 powershell '''
-                $maxAttempts = 40
-                $url = "http://127.0.0.1:8000/analyze"
+                $maxAttempts = 50
+                $url = "http://localhost:8000/analyze"
                 $attempt = 0
 
                 while ($attempt -lt $maxAttempts) {
                     try {
-                        $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3
+                        $response = Invoke-WebRequest -Uri $url -Method POST -UseBasicParsing -TimeoutSec 3
                         if ($response.StatusCode -eq 200) {
                             Write-Host "✅ ML API is UP!"
                             break
@@ -64,6 +64,7 @@ pipeline {
                 '''
             }
         }
+
 
         stage('Analyse ML') {
             steps {
