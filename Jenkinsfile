@@ -39,7 +39,7 @@ pipeline {
         stage('Wait for ML API') {
             steps {
                 powershell '''
-                $maxAttempts = 10
+                $maxAttempts = 40
                 $url = "http://127.0.0.1:8000/analyze"
                 $attempt = 0
 
