@@ -79,16 +79,16 @@ pipeline {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
 
             script {
-                def logFile = new File("${env.WORKSPACE}/logs/app.log")
-                def anomalyFile = new File("${env.WORKSPACE}/logs/anomalies.json")
+                def logContent = ''
+                def anomalyContent = ''
 
-                // Lecture sécurisée sans méthodes non autorisées
-                def logContent = logFile.exists() ? logFile.text.split('\n').takeRight(20).join('\n') : "⚠️ app.log introuvable"
-                def anomalyContent = anomalyFile.exists() ? anomalyFile.text.split('\n').takeRight(20).join('\n') : "⚠️ anomalies.json introuvable"
-
-                // Échapper les backticks pour éviter de casser le markdown
-                logContent = logContent.replace('```', '\\`\\`\\`')
-                anomalyContent = anomalyContent.replace('```', '\\`\\`\\`')
+                if (isUnix()) {
+                    logContent = sh(returnStdout: true, script: 'tail -n 20 logs/app.log || echo "app.log missing"').trim()
+                    anomalyContent = sh(returnStdout: true, script: 'tail -n 20 logs/anomalies.json || echo "anomalies.json missing"').trim()
+                } else {
+                    logContent = bat(returnStdout: true, script: 'powershell -Command "Get-Content logs/app.log -Tail 20"').trim()
+                    anomalyContent = bat(returnStdout: true, script: 'powershell -Command "Get-Content logs/anomalies.json -Tail 20"').trim()
+                }
 
                 def payload = """
                 {
@@ -105,7 +105,7 @@ pipeline {
                     url: CHAT_WEBHOOK_URL,
                     contentType: 'APPLICATION_JSON',
                     requestBody: payload,
-                    validResponseCodes: '100:399'  // ignore erreur http sinon pipeline fail
+                    validResponseCodes: '100:399'
                 )
             }
         }
