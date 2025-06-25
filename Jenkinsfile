@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         APP_NAME = 'flask-log-app'
+        CHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
+        ARTIFACTS_URL = "${env.BUILD_URL}artifact/logs/"
     }
 
     stages {
@@ -77,49 +79,33 @@ pipeline {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
 
             script {
-                def logContent = "⚠️ app.log introuvable"
-                def anomalyContent = "⚠️ anomalies.json introuvable"
+                def logFile = new File("${env.WORKSPACE}/logs/app.log")
+                def anomalyFile = new File("${env.WORKSPACE}/logs/anomalies.json")
 
-                if (fileExists('logs/app.log')) {
-                    def lines = readFile('logs/app.log').split('\n')
-                    def lastLogs = lines.size() > 10 ? lines[-10..-1] : lines
-                    logContent = lastLogs.join("\n")
-                }
+                // Lecture sécurisée sans méthodes non autorisées
+                def logContent = logFile.exists() ? logFile.text.split('\n').takeRight(20).join('\n') : "⚠️ app.log introuvable"
+                def anomalyContent = anomalyFile.exists() ? anomalyFile.text.split('\n').takeRight(20).join('\n') : "⚠️ anomalies.json introuvable"
 
-                if (fileExists('logs/anomalies.json')) {
-                    def anomalies = readFile('logs/anomalies.json').split('\n')
-                    def lastAnomalies = anomalies.size() > 10 ? anomalies[-10..-1] : anomalies
-                    anomalyContent = lastAnomalies.join("\n")
-                }
-
-                def buildUrl = env.BUILD_URL ?: "https://your-jenkins-url/job/${env.JOB_NAME}/${env.BUILD_NUMBER}/"
-                def artifactUrl = "${buildUrl}artifact/logs/"
-
-                // Échapper guillemets et retours à la ligne
-                def safeMessage = """📢 *Pipeline terminé avec le statut:* ${currentBuild.currentResult}
-📂 *Job:* ${env.JOB_NAME} (#${env.BUILD_NUMBER})
-
-📄 *Logs récents :*
-${logContent.replace("\"", "\\\"").replace("\n", "\\n")}
-
-🚨 *Anomalies détectées :*
-${anomalyContent.replace("\"", "\\\"").replace("\n", "\\n")}
-
-📎 *Fichiers artifacts :* ${artifactUrl}
-"""
+                // Échapper les backticks pour éviter de casser le markdown
+                logContent = logContent.replace('```', '\\`\\`\\`')
+                anomalyContent = anomalyContent.replace('```', '\\`\\`\\`')
 
                 def payload = """
                 {
-                  "text": "${safeMessage}"
+                  "text": "📢 *Pipeline terminé avec le statut:* ${currentBuild.currentResult}\\n" +
+                          "📂 *Job:* ${env.JOB_NAME} (#${env.BUILD_NUMBER})\\n\\n" +
+                          "📄 *Logs récents :*\\n```\\n${logContent}\\n```\\n\\n" +
+                          "🚨 *Anomalies détectées :*\\n```\\n${anomalyContent}\\n```\\n\\n" +
+                          "📎 *Fichiers artifacts :* ${ARTIFACTS_URL}"
                 }
                 """
 
-                // Envoi de la notification Google Chat
                 httpRequest(
                     httpMode: 'POST',
-                    url: 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ',
+                    url: CHAT_WEBHOOK_URL,
                     contentType: 'APPLICATION_JSON',
-                    requestBody: payload.trim()
+                    requestBody: payload,
+                    validResponseCodes: '100:399'  // ignore erreur http sinon pipeline fail
                 )
             }
         }
