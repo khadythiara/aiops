@@ -40,7 +40,7 @@ pipeline {
             steps {
                 powershell '''
                 $maxAttempts = 50
-                $url = "http://localhost:8000/analyze"
+                $url = "http://127.0.0.1:8000/analyze"
                 $attempt = 0
 
                 while ($attempt -lt $maxAttempts) {
@@ -65,7 +65,6 @@ pipeline {
             }
         }
 
-
         stage('Analyse ML') {
             steps {
                 powershell 'Invoke-RestMethod -Uri http://127.0.0.1:8000/analyze -Method POST'
@@ -78,9 +77,15 @@ pipeline {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
 
             script {
+                def logFile = new File("${env.WORKSPACE}/logs/app.log")
+                def anomalyFile = new File("${env.WORKSPACE}/logs/anomalies.json")
+
+                def logContent = logFile.exists() ? logFile.readLines().takeRight(10).join("\\n") : "⚠️ app.log introuvable"
+                def anomalyContent = anomalyFile.exists() ? anomalyFile.readLines().takeRight(10).join("\\n") : "⚠️ anomalies.json introuvable"
+
                 def payload = """
                 {
-                  "text": "📢 Pipeline terminé avec le statut: ${currentBuild.currentResult}\\nJob: ${env.JOB_NAME} (#${env.BUILD_NUMBER})"
+                  "text": "📢 *Pipeline terminé avec le statut:* ${currentBuild.currentResult}\\n📂 *Job:* ${env.JOB_NAME} (#${env.BUILD_NUMBER})\\n\\n📄 *Logs récents :*\\n${logContent}\\n\\n🚨 *Anomalies détectées :*\\n${anomalyContent}"
                 }
                 """
 
