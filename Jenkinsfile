@@ -82,17 +82,22 @@ pipeline {
 
                 if (fileExists('logs/app.log')) {
                     def lines = readFile('logs/app.log').split('\n')
-                    logContent = lines.takeRight(10).join("\\n")
+                    def lastLogs = lines.size() > 10 ? lines[-10..-1] : lines
+                    logContent = lastLogs.join("\\n")
                 }
 
                 if (fileExists('logs/anomalies.json')) {
                     def anomalies = readFile('logs/anomalies.json').split('\n')
-                    anomalyContent = anomalies.takeRight(10).join("\\n")
+                    def lastAnomalies = anomalies.size() > 10 ? anomalies[-10..-1] : anomalies
+                    anomalyContent = lastAnomalies.join("\\n")
                 }
+
+                def buildUrl = env.BUILD_URL ?: "https://your-jenkins-url/job/${env.JOB_NAME}/${env.BUILD_NUMBER}/"
+                def artifactUrl = "${buildUrl}artifact/logs/"
 
                 def payload = """
                 {
-                  "text": "📢 *Pipeline terminé avec le statut:* ${currentBuild.currentResult}\\n📂 *Job:* ${env.JOB_NAME} (#${env.BUILD_NUMBER})\\n\\n📄 *Logs récents :*\\n${logContent}\\n\\n🚨 *Anomalies détectées :*\\n${anomalyContent}"
+                  "text": "📢 *Pipeline terminé avec le statut:* ${currentBuild.currentResult}\\n📂 *Job:* ${env.JOB_NAME} (#${env.BUILD_NUMBER})\\n\\n📄 *Logs récents :*\\n${logContent}\\n\\n🚨 *Anomalies détectées :*\\n${anomalyContent}\\n\\n📎 *Fichiers artifacts :* ${artifactUrl}"
                 }
                 """
 
