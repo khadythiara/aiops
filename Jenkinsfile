@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        CHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gGwyrtm0HTHxShCL-bi8vynKRjZQ'
+        CHAT_WEBHOOK_URL = 'https://chat.googleapis.com/v1/spaces/AAQA39W9xSk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=lRVS-nOpraJquu3gwyrtm0HTHxShCL-bi8vynKRjZQ'
         ARTIFACTS_URL = "${env.BUILD_URL}artifact/logs/"
     }
 
@@ -34,14 +34,11 @@ pipeline {
     post {
         always {
             script {
-                // Lire les logs
                 def recentLogs = ""
                 if (fileExists('logs/logs.txt')) {
-                    def logFile = readFile('logs/logs.txt')
-                    recentLogs = logFile.readLines().takeRight(10).join('\n')
+                    recentLogs = readFile('logs/logs.txt').readLines().takeRight(10).join('\n')
                 }
 
-                // Lire les anomalies
                 def anomalyFormatted = ""
                 if (fileExists('logs/anomalies.json')) {
                     def anomalyJson = readFile('logs/anomalies.json')
@@ -50,9 +47,24 @@ pipeline {
                     anomalyFormatted = anomalies.collect { groovy.json.JsonOutput.toJson(it) }.join('\n')
                 }
 
-                // Construire le message Google Chat
                 def textMessage = """
 📣 *Pipeline terminé* : ${currentBuild.currentResult}
 🔗 *Job* : ${env.JOB_NAME} #${env.BUILD_NUMBER}
 
 📄 *Logs récents :*
+${recentLogs}
+
+🚨 *Anomalies détectées :*
+${anomalyFormatted}
+
+📦 *Fichiers artifacts* : ${ARTIFACTS_URL}
+"""
+
+                httpRequest httpMode: 'POST',
+                    contentType: 'APPLICATION_JSON',
+                    requestBody: """{ "text": "${textMessage.replace("\"", "\\\"")}" }""",
+                    url: "${CHAT_WEBHOOK_URL}"
+            }
+        }
+    }
+}
