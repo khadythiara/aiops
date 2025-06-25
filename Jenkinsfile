@@ -77,11 +77,18 @@ pipeline {
             archiveArtifacts artifacts: 'logs/*.log', onlyIfSuccessful: false
 
             script {
-                def logFile = new File("${env.WORKSPACE}/logs/app.log")
-                def anomalyFile = new File("${env.WORKSPACE}/logs/anomalies.json")
+                def logContent = "⚠️ app.log introuvable"
+                def anomalyContent = "⚠️ anomalies.json introuvable"
 
-                def logContent = logFile.exists() ? logFile.readLines().takeRight(10).join("\\n") : "⚠️ app.log introuvable"
-                def anomalyContent = anomalyFile.exists() ? anomalyFile.readLines().takeRight(10).join("\\n") : "⚠️ anomalies.json introuvable"
+                if (fileExists('logs/app.log')) {
+                    def lines = readFile('logs/app.log').split('\n')
+                    logContent = lines.takeRight(10).join("\\n")
+                }
+
+                if (fileExists('logs/anomalies.json')) {
+                    def anomalies = readFile('logs/anomalies.json').split('\n')
+                    anomalyContent = anomalies.takeRight(10).join("\\n")
+                }
 
                 def payload = """
                 {
